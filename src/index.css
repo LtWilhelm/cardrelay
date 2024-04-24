@@ -43,3 +43,16 @@
     height: 297mm;
   }
 }
+
+@media print {
+  *:not(:has(.paper)):not(.paper):not(.paper *) {
+    display: none;
+  }
+  * {
+    margin: 0 !important;
+  }
+  .container {
+    width: min-content;
+    border: none;
+  }
+}

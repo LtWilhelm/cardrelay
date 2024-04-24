@@ -9,7 +9,6 @@ export function useDoodler(
   const [doodler, setDoodler] = useDebouncedState<Doodler>();
 
   useEffect(() => {
-    if (!canvasRef.current) return;
     setDoodler((doodler) => {
       if (!doodler) {
         return createDoodler();
@@ -23,11 +22,12 @@ export function useDoodler(
         return createDoodler();
       }
 
-      function createDoodler(): Doodler {
+      function createDoodler(): Doodler | undefined {
+        if (!canvasRef.current) return;
         const doodler = new Doodler({
           width: (cfg.width + cfg.bleed + cfg.bleed) * cfg.ppi,
           height: (cfg.height + cfg.bleed + cfg.bleed) * cfg.ppi,
-          canvas: canvasRef.current!,
+          canvas: canvasRef.current,
           bg: "white",
           willReadFrequently: true,
         });

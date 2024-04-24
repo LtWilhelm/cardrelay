@@ -2,13 +2,17 @@ import {
   createContext,
   Dispatch,
   SetStateAction,
+  useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { testfile } from "./consts/testfile";
 import { useDeckImages } from "./hooks/useDeckImages";
 import { useInput } from "./hooks/useInput";
 import { CardRow } from "./components/CardRow";
+import jsPDF from "jspdf";
+import { naturalsUntil } from "./util/generator";
 
 const statusContext = createContext<
   { status: string; setStatus: Dispatch<SetStateAction<string>> }
@@ -23,7 +27,6 @@ function App() {
   const [status, setStatus] = useState("");
 
   const [perPage, bindPerPage, resetPerPage, setValuePerPage] = useInput(4);
-  const pageStart = pageIndex * perPage;
   const [bleed, bindBleed, resetBleed, setValueBleed] = useInput(0);
 
   const [margin, bindMargin] = useInput(.5);
@@ -55,9 +58,30 @@ function App() {
   const [cardWidth, bindCardWidth] = useInput(2.5);
   const [cardHeight, bindCardHeight] = useInput(3.5);
 
+  const pageRef = useRef<HTMLDivElement>(null);
+
+  const [printMode, setPrintMode] = useState(false);
+
+  const save = useCallback(() => {
+    setPrintMode(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        setPrintMode(false);
+      }, 10);
+    }, 3000);
+  }, [pageRef]);
+
   return (
     <statusContext.Provider value={{ status, setStatus }}>
       <main className="container border border-orange-950">
+        <button
+          className="fixed bottom-16 right-16 text-2xl bg-green-700 p-2 rounded-md"
+          onClick={save}
+          disabled={printMode}
+        >
+          {printMode ? "Creating Cards..." : "Save"}
+        </button>
         <header className="flex gap-8 justify-start">
           <div>
             <h1 className="text-5xl">Card Relay</h1>
@@ -202,44 +226,52 @@ function App() {
             </button>
           </div>
 
-          <div
-            className="paper letter flex flex-col"
-            style={{
-              paddingLeft: margin + "in",
-              paddingRight: margin + "in",
-              paddingTop: margin + "in",
-            }}
-          >
-            {!!images.length && currentDeck.DeckIDs.slice(
-              pageStart,
-              perPage + pageStart,
-            ).map((idx, i) => {
-              const deckId = idx.toString().charAt(0);
-              const frontImage = images.find((e) =>
-                e.deckIndex === deckId && e.type === "front"
-              );
-              const backImage = images.find((e) =>
-                e.deckIndex === deckId && e.type === "back"
-              );
-              return (
-                <CardRow
-                  idx={idx}
-                  i={i}
-                  cardHeight={cardHeight}
-                  bleed={bleed}
-                  cardWidth={cardWidth}
-                  margin={margin}
-                  frontImage={frontImage}
-                  ppi={ppi}
-                  frontBleedType={frontBleedType}
-                  frontBleedColor={frontBleedColor}
-                  backImage={backImage}
-                  backBleedType={backBleedType}
-                  backBleedColor={backBleedColor}
-                />
-              );
-            })}
-          </div>
+          {Array.from(naturalsUntil(pageCount)).filter((p) =>
+            p === pageIndex || printMode
+          ).map((p) => {
+            const pageStart = p * perPage;
+            return (
+              <div
+                ref={pageRef}
+                className="paper letter flex flex-col"
+                style={{
+                  paddingLeft: margin + "in",
+                  paddingRight: margin + "in",
+                  paddingTop: margin + "in",
+                }}
+              >
+                {!!images.length && currentDeck.DeckIDs.slice(
+                  pageStart,
+                  perPage + pageStart,
+                ).map((idx, i) => {
+                  const deckId = idx.toString().charAt(0);
+                  const frontImage = images.find((e) =>
+                    e.deckIndex === deckId && e.type === "front"
+                  );
+                  const backImage = images.find((e) =>
+                    e.deckIndex === deckId && e.type === "back"
+                  );
+                  return (
+                    <CardRow
+                      idx={idx}
+                      i={i}
+                      cardHeight={cardHeight}
+                      bleed={bleed}
+                      cardWidth={cardWidth}
+                      margin={margin}
+                      frontImage={frontImage}
+                      ppi={ppi}
+                      frontBleedType={frontBleedType}
+                      frontBleedColor={frontBleedColor}
+                      backImage={backImage}
+                      backBleedType={backBleedType}
+                      backBleedColor={backBleedColor}
+                    />
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </main>
     </statusContext.Provider>
