@@ -67,7 +67,7 @@ export function CardRenderer(
     };
     const layer2 = (c: CanvasRenderingContext2D) => {
       c.save();
-      c.filter = "blur(50px)";
+      // c.filter = "blur(50px)";
       if (bleed && bleedType === "gen") {
         drawCardBleed(
           c,

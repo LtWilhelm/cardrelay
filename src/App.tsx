@@ -34,7 +34,10 @@ function App() {
 
   const images = useDeckImages(currentDeck);
 
-  const pageSizes = ["Letter", "A4"];
+  const pageSizes = [
+    "Letter",
+    //  "A4"
+  ];
   const [pageSize, bindPageSize] = useInput("letter");
 
   const bleedTypes = [
@@ -76,7 +79,7 @@ function App() {
     <statusContext.Provider value={{ status, setStatus }}>
       <main className="container border border-orange-950">
         <button
-          className="fixed bottom-16 right-16 text-2xl bg-green-700 p-2 rounded-md"
+          className="fixed bottom-16 right-16 text-2xl bg-green-700 p-2 rounded-md z-50"
           onClick={save}
           disabled={printMode}
         >
@@ -112,7 +115,8 @@ function App() {
                   {...bindMargin}
                   min={0}
                   step={.1}
-                />
+                />{" "}
+                in.
               </label>
               <br />
               <label>
@@ -148,7 +152,7 @@ function App() {
                   min={0}
                   step={.01}
                   className="w-16"
-                />
+                />{" "}
                 in.
               </label>
             </div>
@@ -232,6 +236,7 @@ function App() {
             const pageStart = p * perPage;
             return (
               <div
+                key={"page: " + printMode ? 0 : p}
                 ref={pageRef}
                 className="paper letter flex flex-col"
                 style={{
@@ -253,8 +258,8 @@ function App() {
                   );
                   return (
                     <CardRow
+                      key={"card:" + idx + i}
                       idx={idx}
-                      i={i}
                       cardHeight={cardHeight}
                       bleed={bleed}
                       cardWidth={cardWidth}
