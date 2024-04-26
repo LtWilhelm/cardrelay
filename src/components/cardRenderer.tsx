@@ -1,6 +1,6 @@
 import { Vector } from "@cgg/emmaline";
 import { useDoodler } from "../hooks/useDoodler";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 interface IProps extends CardRendererConfig {
   image: HTMLImageElement;
@@ -101,7 +101,9 @@ export function CardRenderer(
     bleedColor,
   ]);
 
-  doodler?.drawManaged();
+  useEffect(() => {
+    doodler?.drawManaged();
+  });
   // console.log(doodler);
 
   return (

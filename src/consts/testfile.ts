@@ -1,4 +1,4 @@
-export const testfile = {
+export const testfile: { ObjectStates: TTSObjectState[] } = {
   ObjectStates: [
     {
       Name: "Deck",

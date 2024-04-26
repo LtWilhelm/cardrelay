@@ -1,4 +1,5 @@
 import {
+  ChangeEvent,
   createContext,
   Dispatch,
   SetStateAction,
@@ -7,12 +8,11 @@ import {
   useRef,
   useState,
 } from "react";
-import { testfile } from "./consts/testfile";
 import { useDeckImages } from "./hooks/useDeckImages";
-import { useInput } from "./hooks/useInput";
+import { useCheckbox, useInput } from "./hooks/useInput";
 import { CardRow } from "./components/CardRow";
-import jsPDF from "jspdf";
 import { naturalsUntil } from "./util/generator";
+import { TTSUploader } from "./components/TTSUploader";
 
 const statusContext = createContext<
   { status: string; setStatus: Dispatch<SetStateAction<string>> }
@@ -22,12 +22,21 @@ function App() {
   // const itemsPerPage = 4;
   const [pageIndex, setPageIndex] = useState(0);
 
-  const currentDeck = testfile.ObjectStates[0];
+  const [ttsFile, setTTSFile] = useState<{ ObjectStates: TTSObjectState[] }>();
+
+  const [currentDeck, setCurrentDeck] = useState<TTSObjectState>();
+
+  function changeDeck(e: ChangeEvent<HTMLSelectElement>) {
+    setCurrentDeck(() => {
+      const selected = ttsFile?.ObjectStates[Number(e.target.value)];
+      return selected;
+    });
+  }
 
   const [status, setStatus] = useState("");
 
-  const [perPage, bindPerPage, resetPerPage, setValuePerPage] = useInput(4);
-  const [bleed, bindBleed, resetBleed, setValueBleed] = useInput(0);
+  const [perPage, bindPerPage] = useInput(4);
+  const [bleed, bindBleed] = useInput(0);
 
   const [margin, bindMargin] = useInput(.5);
   const [ppi, bindPPI] = useInput(300);
@@ -56,10 +65,49 @@ function App() {
   const [backBleedType, bindBackBleedType] = useInput<BleedType>("solid");
   const [backBleedColor, bindBackBleedColor] = useInput("");
 
-  const pageCount = Math.ceil(currentDeck.DeckIDs.length / perPage);
+  const [pageCount, setPageCount] = useState<number>(0);
+  useEffect(() => {
+    setPageCount(() => {
+      if (!currentDeck) return 0;
+      return Math.ceil(currentDeck.DeckIDs.length / perPage);
+    });
+  }, [currentDeck]);
 
-  const [cardWidth, bindCardWidth] = useInput(2.5);
-  const [cardHeight, bindCardHeight] = useInput(3.5);
+  const [cardWidth, bindCardWidth, _cw, setCardWidth] = useInput<number>(2.5);
+  const [cardHeight, bindCardHeight, _ch, setCardHeight] = useInput<number>(
+    3.5,
+  );
+  const [aspectRatio, setAspectRatio] = useState(cardWidth / cardHeight);
+
+  const [preserveAspectRatio, bindPreserveAR] = useCheckbox(false);
+  const [deriveAR, bindDeriveAR] = useCheckbox(false);
+
+  useEffect(() => {
+    if (!images || !deriveAR) return;
+    const frontImage = images.find((i) => i.type === "front") ||
+      images.find((i) => i.type === "back");
+    if (!frontImage) return;
+    const cannonicalAspectRatio = frontImage.cardWidth / frontImage.cardHeight;
+
+    setAspectRatio(cannonicalAspectRatio);
+  }, [currentDeck, images, deriveAR]);
+
+  useEffect(() => {
+    if (!preserveAspectRatio) return;
+    setCardHeight((ch) => {
+      const correctedHeight = cardWidth / aspectRatio;
+      if (ch !== correctedHeight) return correctedHeight;
+      return ch;
+    });
+  }, [aspectRatio, cardWidth, preserveAspectRatio]);
+  useEffect(() => {
+    if (!preserveAspectRatio) return;
+    setCardWidth((cw) => {
+      const correctedWidth = cardHeight * aspectRatio;
+      if (cw !== correctedWidth) return correctedWidth;
+      return cw;
+    });
+  }, [aspectRatio, cardHeight, preserveAspectRatio]);
 
   const pageRef = useRef<HTMLDivElement>(null);
 
@@ -77,14 +125,16 @@ function App() {
 
   return (
     <statusContext.Provider value={{ status, setStatus }}>
-      <main className="container border border-orange-950">
-        <button
-          className="fixed bottom-16 right-16 text-2xl bg-green-700 p-2 rounded-md z-50"
-          onClick={save}
-          disabled={printMode}
-        >
-          {printMode ? "Creating Cards..." : "Save"}
-        </button>
+      <main className="container p-2">
+        {!!currentDeck && (
+          <button
+            className="fixed bottom-16 right-16 text-2xl bg-green-700 p-2 rounded-md z-50"
+            onClick={save}
+            disabled={printMode}
+          >
+            {printMode ? "Creating Cards..." : "Save"}
+          </button>
+        )}
         <header className="flex gap-8 justify-start">
           <div>
             <h1 className="text-5xl">Card Relay</h1>
@@ -93,6 +143,19 @@ function App() {
               gutter-fold layouts for cards<br />
               from a TTS json file
             </h2>
+          </div>
+          <div>
+            <h2>Deck Selection</h2>
+            <TTSUploader setTTSFile={setTTSFile} />
+            <br />
+            {!!ttsFile && (
+              <select onChange={changeDeck}>
+                <option value="">Select a deck...</option>
+                {ttsFile.ObjectStates.map((s, i) => (
+                  <option value={i} key={s.Nickname}>{s.Nickname}</option>
+                ))}
+              </select>
+            )}
           </div>
           <div className="flex flex-wrap gap-y-1 gap-x-4">
             <h2 className="text-xl w-full">Layout Settings</h2>
@@ -131,30 +194,79 @@ function App() {
             </div>
 
             <div>
-              <h3>Cards</h3>
-              <label>
-                Cards Per Page:&nbsp;
-                <input
-                  type="number"
-                  {...bindPerPage}
-                  max={6}
-                  min={1}
-                  className="w-16"
-                />
-              </label>
-              <br />
-              <label>
-                Bleed:&nbsp;
-                <input
-                  type="number"
-                  {...bindBleed}
-                  max={.5}
-                  min={0}
-                  step={.01}
-                  className="w-16"
-                />{" "}
-                in.
-              </label>
+              <div className="flex flex-wrap gap-x-2">
+                <h3 className="w-full">Cards</h3>
+                <div>
+                  <label>
+                    Cards Per Page:&nbsp;
+                    <input
+                      type="number"
+                      {...bindPerPage}
+                      min={1}
+                      className="w-16"
+                    />
+                  </label>
+                  <br />
+                  <label>
+                    Bleed:&nbsp;
+                    <input
+                      type="number"
+                      {...bindBleed}
+                      max={.5}
+                      min={0}
+                      step={.01}
+                      className="w-16"
+                    />{" "}
+                    in.
+                  </label>
+                </div>
+                <div>
+                  <label>
+                    Card Width:&nbsp;
+                    <input
+                      type="number"
+                      {...bindCardWidth}
+                      min={0}
+                      step={.01}
+                      className="w-16"
+                    />{" "}
+                    in.
+                  </label>
+                  <br />
+                  <label>
+                    Card Height:&nbsp;
+                    <input
+                      type="number"
+                      {...bindCardHeight}
+                      min={0}
+                      step={.01}
+                      className="w-16"
+                    />{" "}
+                    in.
+                  </label>
+                  <br />
+                  <label>
+                    <input type="checkbox" {...bindPreserveAR} />{" "}
+                    Preserve Aspect Ratio
+                  </label>
+                  <br />
+                  {preserveAspectRatio && (
+                    <div className="w-min">
+                      <label className="whitespace-nowrap">
+                        <input type="checkbox" {...bindDeriveAR} />{" "}
+                        Derive aspect ratio from image
+                      </label>
+                      <br />
+                      <small>
+                        <span className="text-red-600">Warning:</span>{" "}
+                        a bit funky right now, it should work, but you may need
+                        to change height or width a few times before it calms
+                        down
+                      </small>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {bleed > 0 && (
@@ -194,90 +306,92 @@ function App() {
           </div>
         </header>
 
-        <div className="text-center w-full text-xl mt-4 relative">
-          <p>Page {pageIndex + 1}</p>
+        {!!currentDeck && (
+          <div className="text-center w-full text-xl mt-4 relative">
+            <p>Page {pageIndex + 1}</p>
 
-          <div className="flex gap-2 absolute top-1/2 left-10">
-            <button
-              className="rounded-md p-1 px-2 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
-              disabled={pageIndex <= 0}
-              onClick={() => setPageIndex(0)}
-            >
-              {"|<"}
-            </button>
-            <button
-              className="rounded-md p-1 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
-              disabled={pageIndex === 0}
-              onClick={() => setPageIndex(pageIndex - 1)}
-            >
-              Prev
-            </button>
-          </div>
-          <div className="flex gap-2 absolute top-1/2 right-10">
-            <button
-              className="rounded-md p-1 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
-              disabled={pageIndex === pageCount - 1}
-              onClick={() => setPageIndex(pageIndex + 1)}
-            >
-              Next
-            </button>
-            <button
-              className="rounded-md p-1 px-2 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
-              disabled={pageIndex >= pageCount - 2}
-              onClick={() => setPageIndex(pageCount - 1)}
-            >
-              {">|"}
-            </button>
-          </div>
-
-          {Array.from(naturalsUntil(pageCount)).filter((p) =>
-            p === pageIndex || printMode
-          ).map((p) => {
-            const pageStart = p * perPage;
-            return (
-              <div
-                key={"page: " + printMode ? 0 : p}
-                ref={pageRef}
-                className="paper letter flex flex-col"
-                style={{
-                  paddingLeft: margin + "in",
-                  paddingRight: margin + "in",
-                  paddingTop: margin + "in",
-                }}
+            <div className="flex gap-2 absolute top-1/2 left-10">
+              <button
+                className="rounded-md p-1 px-2 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
+                disabled={pageIndex <= 0}
+                onClick={() => setPageIndex(0)}
               >
-                {!!images.length && currentDeck.DeckIDs.slice(
-                  pageStart,
-                  perPage + pageStart,
-                ).map((idx, i) => {
-                  const deckId = idx.toString().charAt(0);
-                  const frontImage = images.find((e) =>
-                    e.deckIndex === deckId && e.type === "front"
-                  );
-                  const backImage = images.find((e) =>
-                    e.deckIndex === deckId && e.type === "back"
-                  );
-                  return (
-                    <CardRow
-                      key={"card:" + idx + i}
-                      idx={idx}
-                      cardHeight={cardHeight}
-                      bleed={bleed}
-                      cardWidth={cardWidth}
-                      margin={margin}
-                      frontImage={frontImage}
-                      ppi={ppi}
-                      frontBleedType={frontBleedType}
-                      frontBleedColor={frontBleedColor}
-                      backImage={backImage}
-                      backBleedType={backBleedType}
-                      backBleedColor={backBleedColor}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
+                {"|<"}
+              </button>
+              <button
+                className="rounded-md p-1 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
+                disabled={pageIndex === 0}
+                onClick={() => setPageIndex(pageIndex - 1)}
+              >
+                Prev
+              </button>
+            </div>
+            <div className="flex gap-2 absolute top-1/2 right-10">
+              <button
+                className="rounded-md p-1 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
+                disabled={pageIndex === pageCount - 1}
+                onClick={() => setPageIndex(pageIndex + 1)}
+              >
+                Next
+              </button>
+              <button
+                className="rounded-md p-1 px-2 bg-purple-700 disabled:bg-purple-950 disabled:opacity-50"
+                disabled={pageIndex >= pageCount - 2}
+                onClick={() => setPageIndex(pageCount - 1)}
+              >
+                {">|"}
+              </button>
+            </div>
+
+            {Array.from(naturalsUntil(pageCount)).filter((p) =>
+              p === pageIndex || printMode
+            ).map((p) => {
+              const pageStart = p * perPage;
+              return (
+                <div
+                  key={"page: " + printMode ? 0 : p}
+                  ref={pageRef}
+                  className="paper letter flex flex-col"
+                  style={{
+                    paddingLeft: margin + "in",
+                    paddingRight: margin + "in",
+                    paddingTop: margin + "in",
+                  }}
+                >
+                  {!!images.length && currentDeck?.ContainedObjects.slice(
+                    pageStart,
+                    perPage + pageStart,
+                  ).map(({ CardID, Nickname }, i) => {
+                    const deckId = CardID.toString().charAt(0);
+                    const frontImage = images.find((e) =>
+                      e.deckIndex === deckId && e.type === "front"
+                    );
+                    const backImage = images.find((e) =>
+                      e.deckIndex === deckId && e.type === "back"
+                    );
+                    return (
+                      <CardRow
+                        key={"card:" + CardID + Nickname + i}
+                        idx={CardID}
+                        cardHeight={cardHeight}
+                        bleed={bleed}
+                        cardWidth={cardWidth}
+                        margin={margin}
+                        frontImage={frontImage}
+                        ppi={ppi}
+                        frontBleedType={frontBleedType}
+                        frontBleedColor={frontBleedColor}
+                        backImage={backImage}
+                        backBleedType={backBleedType}
+                        backBleedColor={backBleedColor}
+                      />
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
     </statusContext.Provider>
   );

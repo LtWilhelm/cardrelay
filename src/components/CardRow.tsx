@@ -1,6 +1,6 @@
 import { CardRenderer } from "./cardRenderer";
 
-export interface IProps {
+interface IProps {
   idx: number;
   cardHeight: number;
   bleed: number;
@@ -44,6 +44,7 @@ export function CardRow(
         bleedType={frontBleedType}
         bleedColor={frontBleedColor}
         margin={margin}
+        flip={1}
       />
       <div className="border border-b-0 border-dashed border-black">
       </div>
@@ -57,6 +58,7 @@ export function CardRow(
         bleedType={backBleedType}
         bleedColor={backBleedColor}
         margin={margin}
+        flip={-1}
       />
     </div>
   );
@@ -72,6 +74,7 @@ interface ICardProps {
   bleedType: BleedType;
   bleedColor: string;
   margin: number;
+  flip: 1 | -1;
 }
 
 function Card(
@@ -85,6 +88,7 @@ function Card(
     bleedType: backBleedType,
     bleedColor: backBleedColor,
     margin,
+    flip,
   }: ICardProps,
 ) {
   return (
@@ -100,14 +104,18 @@ function Card(
       {!!image && (
         <CardRenderer
           image={image.image}
-          height={2.5}
-          width={3.5}
+          height={cardWidth}
+          width={cardHeight}
           ppi={ppi}
           imageHeight={image.cardHeight}
           imageWidth={image.cardWidth}
-          cardPosX={!image.uniqueBack ? 0 : idx % 100 % image.numWidth}
-          cardPosY={!image.uniqueBack ? 0 : idx % 100 % image.numHeight}
-          flip={-1}
+          cardPosX={!image.uniqueBack && image.type === "back"
+            ? 0
+            : idx % 100 % image.numWidth}
+          cardPosY={!image.uniqueBack && image.type === "back"
+            ? 0
+            : Math.floor(idx % 100 / image.numWidth)}
+          flip={flip}
           bleed={bleed}
           bleedType={backBleedType}
           bleedColor={backBleedType === "solid" ? backBleedColor : undefined}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-export function useDeckImages(objectState: TTSObjectState) {
+export function useDeckImages(objectState?: TTSObjectState) {
   const [images, setImages] = useState<ImageInfo[]>([]);
 
   const addImage = useCallback((i: ImageInfo) => {
@@ -9,6 +9,7 @@ export function useDeckImages(objectState: TTSObjectState) {
 
   useEffect(() => {
     setImages([]);
+    if (!objectState) return;
     for (const [i, deck] of Object.entries(objectState.CustomDeck)) {
       const frontImage = new Image();
       frontImage.setAttribute("crossOrigin", "");

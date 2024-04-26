@@ -1,5 +1,5 @@
 import { Doodler } from "@cgg/emmaline";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import useDebouncedState from "./useDebounce";
 
 export function useDoodler(
@@ -28,7 +28,7 @@ export function useDoodler(
           width: (cfg.width + cfg.bleed + cfg.bleed) * cfg.ppi,
           height: (cfg.height + cfg.bleed + cfg.bleed) * cfg.ppi,
           canvas: canvasRef.current,
-          bg: "white",
+          bg: "#ffffff00",
           willReadFrequently: true,
         });
 
