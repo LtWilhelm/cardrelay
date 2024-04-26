@@ -1,6 +1,7 @@
 {
   "name": "card-layout-app",
   "version": "0.1.0",
+  "homepage": "https://cardrelay.emmaline-autumn.dev",
   "private": true,
   "dependencies": {
     "@cgg/emmaline": "npm:@jsr/cgg__emmaline@^0.1.1",

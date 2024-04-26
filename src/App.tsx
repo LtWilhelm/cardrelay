@@ -263,6 +263,14 @@ function App() {
                         to change height or width a few times before it calms
                         down
                       </small>
+                      <br />
+                      <small>
+                        <span className="text-red-600">
+                          Warning 2 electric boogaloo:
+                        </span>{" "}
+                        don't use this option if you exported your TTS file with
+                        bleed as the calculation will not be correct
+                      </small>
                     </div>
                   )}
                 </div>
