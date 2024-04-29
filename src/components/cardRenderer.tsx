@@ -29,14 +29,20 @@ export function CardRenderer(
     bleedColor,
   }: IProps,
 ) {
-  const [cvsRef, doodler] = useDoodler({ height, width, ppi, bleed });
+  const [cvsRef, doodler] = useDoodler({
+    height,
+    width,
+    ppi,
+    bleed: bleed,
+  });
   const [_, set_] = useState(0);
 
   useEffect(() => {
     if (!doodler) return;
     const calcdHeight = height * ppi;
     const calcdWidth = width * ppi;
-    const calcdBleed = bleed * ppi;
+    const calcdBleed = bleedType === "preset" ? 0 : bleed * ppi;
+    const presetBleed = bleedType !== "preset" ? 0 : bleed * ppi * 2;
     const layer = (c: CanvasRenderingContext2D) => {
       doodler.fillCanvas({ color: bleedColor || "white" });
       doodler.drawRotated(
@@ -50,12 +56,17 @@ export function CardRenderer(
             new Vector(imageWidth * cardPosX, imageHeight * cardPosY),
             imageWidth - bleed,
             imageHeight - bleed,
-            new Vector(
-              flip === -1 ? calcdBleed : -calcdHeight - calcdBleed,
-              flip === 1 ? calcdBleed : -calcdWidth - calcdBleed,
-            ),
-            calcdHeight,
-            calcdWidth,
+            bleedType === "preset"
+              ? new Vector(
+                flip === -1 ? 0 : -calcdHeight - presetBleed,
+                flip === 1 ? 0 : -calcdWidth - presetBleed,
+              )
+              : new Vector(
+                flip === -1 ? calcdBleed : -calcdHeight - calcdBleed,
+                flip === 1 ? calcdBleed : -calcdWidth - calcdBleed,
+              ),
+            calcdHeight + presetBleed,
+            calcdWidth + presetBleed,
           );
           // doodler.drawRect(new Vector(200, 200), 200, 200, {
           //   color: "red",
@@ -108,7 +119,7 @@ export function CardRenderer(
 
   return (
     <>
-      <canvas className="w-full" ref={cvsRef}></canvas>
+      <canvas className="w-full absolute z-10" ref={cvsRef}></canvas>
       {
         /* {!!doodler && (
         <button

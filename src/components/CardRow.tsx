@@ -13,12 +13,13 @@ interface IProps {
   backImage: ImageInfo | undefined;
   backBleedType: BleedType;
   backBleedColor: string;
+  cropLayerBehind: boolean;
 }
 
 export function CardRow(
   {
     idx,
-
+    cropLayerBehind,
     cardHeight,
     bleed,
     cardWidth,
@@ -45,6 +46,7 @@ export function CardRow(
         bleedColor={frontBleedColor}
         margin={margin}
         flip={1}
+        cropLayerBehind={cropLayerBehind}
       />
       <div className="border border-b-0 border-dashed border-black">
       </div>
@@ -59,6 +61,7 @@ export function CardRow(
         bleedColor={backBleedColor}
         margin={margin}
         flip={-1}
+        cropLayerBehind={cropLayerBehind}
       />
     </div>
   );
@@ -75,6 +78,7 @@ interface ICardProps {
   bleedColor: string;
   margin: number;
   flip: 1 | -1;
+  cropLayerBehind: boolean;
 }
 
 function Card(
@@ -89,15 +93,16 @@ function Card(
     bleedColor: backBleedColor,
     margin,
     flip,
+    cropLayerBehind,
   }: ICardProps,
 ) {
   return (
     <div
-      className=" relative border-red-300"
+      className="relative border-red-300"
       // Bear in mind that cards are rotated, width and height are swapped
       style={{
         width: (cardHeight + (2 * bleed)) + "in",
-        // height: (cardWidth + (2 * bleed)) + "in",
+        height: (cardWidth + (2 * bleed)) + "in",
         // height: "min-content",
       }}
     >
@@ -123,7 +128,8 @@ function Card(
         </CardRenderer>
       )}
       <div
-        className="absolute z-10 border-t border-r border-black"
+        data-behind={cropLayerBehind}
+        className="absolute z-10 data-[behind=true]:z-0 border-t border-r border-black"
         style={{
           bottom: -(margin - bleed) + "in",
           left: -(margin - bleed) + "in",
@@ -133,7 +139,8 @@ function Card(
       >
       </div>
       <div
-        className="absolute z-10 border-t border-l border-black"
+        data-behind={cropLayerBehind}
+        className="absolute z-10 data-[behind=true]:z-0 border-t border-l border-black"
         style={{
           bottom: -(margin - bleed) + "in",
           right: -(margin - bleed) + "in",
@@ -143,7 +150,8 @@ function Card(
       >
       </div>
       <div
-        className="absolute z-10 border-b border-l border-black"
+        data-behind={cropLayerBehind}
+        className="absolute z-10 data-[behind=true]:z-0 border-b border-l border-black"
         style={{
           top: -(margin - bleed) + "in",
           right: -(margin - bleed) + "in",
@@ -153,7 +161,8 @@ function Card(
       >
       </div>
       <div
-        className="absolute z-10 border-b border-r border-black"
+        data-behind={cropLayerBehind}
+        className="absolute z-10 data-[behind=true]:z-0 border-b border-r border-black"
         style={{
           top: -(margin - bleed) + "in",
           left: -(margin - bleed) + "in",

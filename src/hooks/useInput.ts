@@ -52,8 +52,8 @@ export const useInput = <T extends string | number>(
         target.type === "number"
           ? clamp(
               Number(target.value),
-              Number((target as HTMLInputElement).max) || Infinity,
-              Number((target as HTMLInputElement).min) || -Infinity
+              Number((target as HTMLInputElement).min) || -Infinity,
+              Number((target as HTMLInputElement).max) || Infinity
             )
           : target.value;
       setValue(newValue as T);

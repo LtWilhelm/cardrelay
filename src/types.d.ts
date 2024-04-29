@@ -44,7 +44,7 @@ interface Deck {
   Type: number;
 }
 
-type BleedType = "solid" | "gen";
+type BleedType = "solid" | "gen" | "preset";
 
 interface ImageInfo {
   image: HTMLImageElement;
@@ -56,3 +56,5 @@ interface ImageInfo {
   numHeight: number;
   uniqueBack?: boolean;
 }
+
+type Unit = "in" | "mm";

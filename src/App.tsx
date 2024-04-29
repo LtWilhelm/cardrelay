@@ -13,6 +13,7 @@ import { useCheckbox, useInput } from "./hooks/useInput";
 import { CardRow } from "./components/CardRow";
 import { naturalsUntil } from "./util/generator";
 import { TTSUploader } from "./components/TTSUploader";
+import { inToMM, mmToIn } from "./util/convert";
 
 const statusContext = createContext<
   { status: string; setStatus: Dispatch<SetStateAction<string>> }
@@ -35,10 +36,17 @@ function App() {
 
   const [status, setStatus] = useState("");
 
-  const [perPage, bindPerPage] = useInput(4);
-  const [bleed, bindBleed] = useInput(0);
+  const [perPage, bindPerPage] = useInput<number>(4);
+  const [bleed, bindBleed, _b, setBleed] = useInput<number>(0);
 
-  const [margin, bindMargin] = useInput(.5);
+  const units: Unit[] = [
+    "in",
+    "mm",
+  ];
+
+  const [measurementUnit, bindMeasurementUnit] = useInput<Unit>("in");
+
+  const [margin, bindMargin, _m, setMargin] = useInput<number>(.5);
   const [ppi, bindPPI] = useInput(300);
 
   const images = useDeckImages(currentDeck);
@@ -57,6 +65,10 @@ function App() {
     [
       "Generate",
       "gen",
+    ],
+    [
+      "Included",
+      "preset",
     ],
   ];
   const [frontBleedType, bindFrontBleedType] = useInput<BleedType>("solid");
@@ -123,6 +135,55 @@ function App() {
     }, 3000);
   }, [pageRef]);
 
+  const [init, setInit] = useState(false);
+
+  useEffect(() => {
+    if (!init) return setInit(true);
+    setBleed((bleed) => {
+      switch (measurementUnit) {
+        case "in":
+          return mmToIn(bleed);
+        case "mm":
+          return inToMM(bleed);
+        default:
+          return bleed;
+      }
+    });
+
+    setMargin((margin) => {
+      switch (measurementUnit) {
+        case "in":
+          return mmToIn(margin);
+        case "mm":
+          return inToMM(margin);
+        default:
+          return margin;
+      }
+    });
+    setCardWidth((width) => {
+      switch (measurementUnit) {
+        case "in":
+          return mmToIn(width);
+        case "mm":
+          return inToMM(width);
+        default:
+          return width;
+      }
+    });
+    setCardHeight((height) => {
+      switch (measurementUnit) {
+        case "in":
+          return mmToIn(height);
+        case "mm":
+          return inToMM(height);
+        default:
+          return height;
+      }
+    });
+  }, [measurementUnit]);
+
+  const [cropLayerBehind, bindCropLayerBehind] = useCheckbox(false);
+
   return (
     <statusContext.Provider value={{ status, setStatus }}>
       <main className="container p-2">
@@ -160,37 +221,49 @@ function App() {
           <div className="flex flex-wrap gap-y-1 gap-x-4">
             <h2 className="text-xl w-full">Layout Settings</h2>
             <div>
-              <h3>Page</h3>
-              <label>
-                Page Size:&nbsp;
-                <select {...bindPageSize}>
-                  {pageSizes.map((s) => (
-                    <option key={s} value={s.toLowerCase()}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <br />
-              <label>
-                Margins:&nbsp;
-                <input
-                  className="w-16"
-                  type="number"
-                  {...bindMargin}
-                  min={0}
-                  step={.1}
-                />{" "}
-                in.
-              </label>
-              <br />
-              <label>
-                PPI:&nbsp;
-                <input
-                  className="w-16"
-                  type="number"
-                  {...bindPPI}
-                  min={0}
-                />
-              </label>
+              <div className="flex flex-wrap gap-4">
+                <h3 className="w-full">Page</h3>
+                <div>
+                  <label>
+                    Page Size:&nbsp;
+                    <select {...bindPageSize}>
+                      {pageSizes.map((s) => (
+                        <option key={s} value={s.toLowerCase()}>{s}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <br />
+                  <label>
+                    Margins:&nbsp;
+                    <input
+                      className="w-16"
+                      type="number"
+                      {...bindMargin}
+                      min={0}
+                      step={.1}
+                    />{" "}
+                    {measurementUnit}
+                  </label>
+                </div>
+                <div>
+                  <label>
+                    PPI:&nbsp;
+                    <input
+                      className="w-16"
+                      type="number"
+                      {...bindPPI}
+                      min={0}
+                    />
+                  </label>
+                  <br />
+                  <label>
+                    Units:{" "}
+                    <select {...bindMeasurementUnit}>
+                      {units.map((u) => <option value={u}>{u}</option>)}
+                    </select>
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -212,14 +285,19 @@ function App() {
                     <input
                       type="number"
                       {...bindBleed}
-                      max={.5}
                       min={0}
                       step={.01}
                       className="w-16"
                     />{" "}
-                    in.
+                    {measurementUnit}
+                  </label>
+                  <br />
+                  <label>
+                    <input type="checkbox" {...bindCropLayerBehind} />{" "}
+                    Place Crop Marks Behind
                   </label>
                 </div>
+
                 <div>
                   <label>
                     Card Width:&nbsp;
@@ -230,7 +308,7 @@ function App() {
                       step={.01}
                       className="w-16"
                     />{" "}
-                    in.
+                    {measurementUnit}
                   </label>
                   <br />
                   <label>
@@ -242,7 +320,7 @@ function App() {
                       step={.01}
                       className="w-16"
                     />{" "}
-                    in.
+                    {measurementUnit}
                   </label>
                   <br />
                   <label>
@@ -361,9 +439,9 @@ function App() {
                   ref={pageRef}
                   className="paper letter flex flex-col"
                   style={{
-                    paddingLeft: margin + "in",
-                    paddingRight: margin + "in",
-                    paddingTop: margin + "in",
+                    paddingLeft: margin + measurementUnit,
+                    paddingRight: margin + measurementUnit,
+                    paddingTop: margin + measurementUnit,
                   }}
                 >
                   {!!images.length && currentDeck?.ContainedObjects.slice(
@@ -381,10 +459,16 @@ function App() {
                       <CardRow
                         key={"card:" + CardID + Nickname + i}
                         idx={CardID}
-                        cardHeight={cardHeight}
-                        bleed={bleed}
-                        cardWidth={cardWidth}
-                        margin={margin}
+                        cardHeight={measurementUnit === "in"
+                          ? cardHeight
+                          : mmToIn(cardHeight)}
+                        bleed={measurementUnit === "in" ? bleed : mmToIn(bleed)}
+                        cardWidth={measurementUnit === "in"
+                          ? cardWidth
+                          : mmToIn(cardWidth)}
+                        margin={measurementUnit === "in"
+                          ? margin
+                          : mmToIn(margin)}
                         frontImage={frontImage}
                         ppi={ppi}
                         frontBleedType={frontBleedType}
@@ -392,6 +476,7 @@ function App() {
                         backImage={backImage}
                         backBleedType={backBleedType}
                         backBleedColor={backBleedColor}
+                        cropLayerBehind={cropLayerBehind}
                       />
                     );
                   })}
