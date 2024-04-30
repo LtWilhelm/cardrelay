@@ -183,6 +183,7 @@ function App() {
   }, [measurementUnit]);
 
   const [cropLayerBehind, bindCropLayerBehind] = useCheckbox(false);
+  const [cropMarkColor, bindCropMarkColor] = useInput("black");
 
   return (
     <statusContext.Provider value={{ status, setStatus }}>
@@ -290,6 +291,11 @@ function App() {
                       className="w-16"
                     />{" "}
                     {measurementUnit}
+                  </label>
+                  <br />
+                  <label>
+                    Crop Mark Color:{" "}
+                    <input type="text" {...bindCropMarkColor} />
                   </label>
                   <br />
                   <label>
@@ -466,9 +472,6 @@ function App() {
                         cardWidth={measurementUnit === "in"
                           ? cardWidth
                           : mmToIn(cardWidth)}
-                        margin={measurementUnit === "in"
-                          ? margin
-                          : mmToIn(margin)}
                         frontImage={frontImage}
                         ppi={ppi}
                         frontBleedType={frontBleedType}
@@ -477,6 +480,7 @@ function App() {
                         backBleedType={backBleedType}
                         backBleedColor={backBleedColor}
                         cropLayerBehind={cropLayerBehind}
+                        cropMarkColor={cropMarkColor}
                       />
                     );
                   })}

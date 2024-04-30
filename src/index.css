@@ -55,4 +55,7 @@
     width: min-content;
     border: none;
   }
+  .paper {
+    page-break-after: always;
+  }
 }

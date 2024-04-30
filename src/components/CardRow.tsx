@@ -1,3 +1,4 @@
+import { CSSProperties } from "react";
 import { CardRenderer } from "./cardRenderer";
 
 interface IProps {
@@ -5,7 +6,6 @@ interface IProps {
   cardHeight: number;
   bleed: number;
   cardWidth: number;
-  margin: number;
   frontImage: ImageInfo | undefined;
   ppi: number;
   frontBleedType: BleedType;
@@ -14,6 +14,7 @@ interface IProps {
   backBleedType: BleedType;
   backBleedColor: string;
   cropLayerBehind: boolean;
+  cropMarkColor: string;
 }
 
 export function CardRow(
@@ -23,7 +24,6 @@ export function CardRow(
     cardHeight,
     bleed,
     cardWidth,
-    margin,
     frontImage,
     ppi,
     frontBleedType,
@@ -31,6 +31,7 @@ export function CardRow(
     backImage,
     backBleedType,
     backBleedColor,
+    cropMarkColor,
   }: IProps,
 ) {
   return (
@@ -44,13 +45,14 @@ export function CardRow(
         idx={idx}
         bleedType={frontBleedType}
         bleedColor={frontBleedColor}
-        margin={margin}
         flip={1}
         cropLayerBehind={cropLayerBehind}
+        cropMarkColor={cropMarkColor}
       />
       <div className="border border-b-0 border-dashed border-black">
       </div>
       <Card
+        cropMarkColor={cropMarkColor}
         cardHeight={cardHeight}
         bleed={bleed}
         cardWidth={cardWidth}
@@ -59,7 +61,6 @@ export function CardRow(
         idx={idx}
         bleedType={backBleedType}
         bleedColor={backBleedColor}
-        margin={margin}
         flip={-1}
         cropLayerBehind={cropLayerBehind}
       />
@@ -76,9 +77,9 @@ interface ICardProps {
   idx: number;
   bleedType: BleedType;
   bleedColor: string;
-  margin: number;
   flip: 1 | -1;
   cropLayerBehind: boolean;
+  cropMarkColor: string;
 }
 
 function Card(
@@ -91,9 +92,9 @@ function Card(
     idx,
     bleedType: backBleedType,
     bleedColor: backBleedColor,
-    margin,
     flip,
     cropLayerBehind,
+    cropMarkColor,
   }: ICardProps,
 ) {
   return (
@@ -104,7 +105,8 @@ function Card(
         width: (cardHeight + (2 * bleed)) + "in",
         height: (cardWidth + (2 * bleed)) + "in",
         // height: "min-content",
-      }}
+        "--crop-color": cropMarkColor || "black",
+      } as CSSProperties}
     >
       {!!image && (
         <CardRenderer
@@ -129,47 +131,59 @@ function Card(
       )}
       <div
         data-behind={cropLayerBehind}
-        className="absolute z-10 data-[behind=true]:z-0 border-t border-r border-black"
+        className="absolute z-10 data-[behind=true]:z-0"
         style={{
-          bottom: -(margin - bleed) + "in",
-          left: -(margin - bleed) + "in",
-          width: margin + "in",
-          height: margin + "in",
+          bottom: bleed + "in",
+          left: bleed + "in",
+          // width: margin + "in",
+          // height: margin + "in",
         }}
       >
+        <div
+          className={"relative before:w-16 before:h-16 before:border-t before:border-r before:border-[--crop-color] before:absolute before:right-0 before:top-0"}
+        />
       </div>
       <div
         data-behind={cropLayerBehind}
-        className="absolute z-10 data-[behind=true]:z-0 border-t border-l border-black"
+        className="absolute z-10 data-[behind=true]:z-0"
         style={{
-          bottom: -(margin - bleed) + "in",
-          right: -(margin - bleed) + "in",
-          width: margin + "in",
-          height: margin + "in",
+          bottom: bleed + "in",
+          right: bleed + "in",
+          // width: margin + "in",
+          // height: margin + "in",
         }}
       >
+        <div
+          className={"relative before:w-16 before:h-16 before:border-t before:border-l before:border-[--crop-color] before:absolute before:left-0 before:top-0"}
+        />
       </div>
       <div
         data-behind={cropLayerBehind}
-        className="absolute z-10 data-[behind=true]:z-0 border-b border-l border-black"
+        className="absolute z-10 data-[behind=true]:z-0"
         style={{
-          top: -(margin - bleed) + "in",
-          right: -(margin - bleed) + "in",
-          width: margin + "in",
-          height: margin + "in",
+          top: bleed + "in",
+          right: bleed + "in",
+          // width: margin + "in",
+          // height: margin + "in",
         }}
       >
+        <div
+          className={"relative before:w-16 before:h-16 before:border-b before:border-l before:border-[--crop-color] before:absolute before:left-0 before:bottom-0"}
+        />
       </div>
       <div
         data-behind={cropLayerBehind}
-        className="absolute z-10 data-[behind=true]:z-0 border-b border-r border-black"
+        className="absolute z-10 data-[behind=true]:z-0"
         style={{
-          top: -(margin - bleed) + "in",
-          left: -(margin - bleed) + "in",
-          width: margin + "in",
-          height: margin + "in",
+          top: bleed + "in",
+          left: bleed + "in",
+          // width: margin + "in",
+          // height: margin + "in",
         }}
       >
+        <div
+          className={"relative before:w-16 before:h-16 before:border-b before:border-r before:border-[--crop-color] before:absolute before:right-0 before:bottom-0"}
+        />
       </div>
     </div>
   );

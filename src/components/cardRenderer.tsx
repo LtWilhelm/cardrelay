@@ -119,7 +119,7 @@ export function CardRenderer(
 
   return (
     <>
-      <canvas className="w-full absolute z-10" ref={cvsRef}></canvas>
+      <canvas className="w-full z-10" ref={cvsRef}></canvas>
       {
         /* {!!doodler && (
         <button
