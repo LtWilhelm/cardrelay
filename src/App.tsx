@@ -53,7 +53,7 @@ function App() {
 
   const pageSizes = [
     "Letter",
-    //  "A4"
+    "A4",
   ];
   const [pageSize, bindPageSize] = useInput("letter");
 
@@ -443,7 +443,7 @@ function App() {
                 <div
                   key={"page: " + printMode ? 0 : p}
                   ref={pageRef}
-                  className="paper letter flex flex-col"
+                  className={"paper flex flex-col " + pageSize}
                   style={{
                     paddingLeft: margin + measurementUnit,
                     paddingRight: margin + measurementUnit,
